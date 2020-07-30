@@ -1,0 +1,4 @@
+# Définie l'environnement
+SetEnvIf HOST "^api.groupe-cac.io" APPLICATION_ENV=production
+SetEnvIf HOST "^recette.api.groupe-cac.io" APPLICATION_ENV=recette
+SetEnvIf HOST "^local.api.groupe-cac.io" APPLICATION_ENV=local

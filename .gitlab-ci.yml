@@ -1,0 +1,87 @@
+stages:
+  #- test
+  #- build
+  - deploy
+
+variables:
+  # sel du token de sécurité md5
+  request_token_salt: 'yhwGLfA9P1KyvlV'
+
+Deploy staging:
+  stage: deploy
+  script:
+    # génère un token de sécurité md5
+    - request_time=$(date +%s)
+    - request_token=$(echo -n "$request_token_salt$request_time" | md5sum | cut -d' ' -f1)
+    # appelle le script de déploiement qui se trouve sur le même serveur que le projet
+    - echo "$STAGING_DEPLOY_SCRIPT"
+    - echo "$REPOSITORY_URL"
+    - echo "$STAGING_ROOT_DIR"
+    - curl_response=$(curl --http1.1 --connect-timeout 600 --max-time 1200 -k -u demo:Studio2013 $STAGING_DEPLOY_SCRIPT -d repository_url=$REPOSITORY_URL -d root_dir=$STAGING_ROOT_DIR -d request_time="$request_time" -d request_token="$request_token")
+    - echo "$curl_response"
+    # vérifie si le script de déploiement a réussi, sinon signale une erreur
+    - '[[ $(echo "$curl_response" | tail -1) == "SUCCESS" ]]'
+  environment: staging
+  # déclenchement du script : uniquement manuel
+  when: manual
+  # arrête le script en cas d'échec d'une des étapes
+  allow_failure: false
+  only:
+    - master
+
+Deploy production:
+  stage: deploy
+  script:
+    # génère un token de sécurité md5
+    - request_time=$(date +%s)
+    - request_token=$(echo -n "$request_token_salt$request_time" | md5sum | cut -d' ' -f1)
+    # appelle le script de déploiement qui se trouve sur le même serveur que le projet
+    - curl_response=$(curl --http1.1 --connect-timeout 600 --max-time 600 -k -u demo:Studio2013 $PRODUCTION_DEPLOY_SCRIPT -d repository_url=$REPOSITORY_URL -d root_dir=$PRODUCTION_ROOT_DIR -d request_time="$request_time" -d request_token="$request_token")
+    - echo "$curl_response"
+    # vérifie si le script de déploiement a réussi, sinon signale une erreur
+    - '[[ $(echo "$curl_response" | tail -1) == "SUCCESS" ]]'
+  environment: production
+  # déclenchement du script : uniquement manuel
+  when: manual
+  # arrête le script en cas d'échec d'une des étapes
+  allow_failure: false
+  only:
+    - master
+
+Rollback staging:
+  stage: deploy
+  script:
+    # génère un token de sécurité md5
+    - request_time=$(date +%s)
+    - request_token=$(echo -n "$request_token_salt$request_time" | md5sum | cut -d' ' -f1)
+    # appelle le script de déploiement qui se trouve sur le même serveur que le projet
+    - curl_response=$(curl --http1.1 --connect-timeout 600 --max-time 600 -k -u demo:Studio2013 $STAGING_DEPLOY_SCRIPT -d root_dir=$STAGING_ROOT_DIR -d rollback=1 -d request_time="$request_time" -d request_token="$request_token")
+    - echo "$curl_response"
+    # vérifie si le script de déploiement a réussi, sinon signale une erreur
+    - '[[ $(echo "$curl_response" | tail -1) == "SUCCESS" ]]'
+  environment: staging
+  # déclenchement du script : uniquement manuel
+  when: manual
+  # arrête le script en cas d'échec d'une des étapes
+  allow_failure: false
+  only:
+    - master
+
+Rollback production:
+  stage: deploy
+  script:
+    # génère un token de sécurité md5
+    - request_time=$(date +%s)
+    - request_token=$(echo -n "$request_token_salt$request_time" | md5sum | cut -d' ' -f1)
+    # appelle le script de déploiement qui se trouve sur le même serveur que le projet
+    - curl_response=$(curl --http1.1 --connect-timeout 600 --max-time 600 -k -u demo:Studio2013 $PRODUCTION_DEPLOY_SCRIPT -d root_dir=$PRODUCTION_ROOT_DIR -d rollback=1 -d request_time="$request_time" -d request_token="$request_token")
+    - echo "$curl_response"
+    # vérifie si le script de déploiement a réussi, sinon signale une erreur
+    - '[[ $(echo "$curl_response" | tail -1) == "SUCCESS" ]]'
+  environment: production
+  # déclenchement du script : uniquement manuel
+  when: manual
+  # arrête le script en cas d'échec d'une des étapes
+  allow_failure: false
+  only:
+    - master
